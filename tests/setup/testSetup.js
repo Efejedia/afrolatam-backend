@@ -3,7 +3,29 @@ const mongoose = require('mongoose');
 jest.mock('../../src/config/cloudinary', () => {
   const multer = require('multer');
   const memoryStorage = multer.memoryStorage();
-  const mockUpload = multer({ storage: memoryStorage });
+  const mockUpload = multer({ 
+    storage: memoryStorage,
+    fileFilter: (req, file, cb) => {
+      const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
+      const ext = file.originalname ? file.originalname.toLowerCase().split('.').pop() : '';
+      const isAllowedMime = allowedMimeTypes.includes(file.mimetype);
+      const isAllowedExt = allowedExtensions.includes(`.${ext}`);
+      
+      if (isAllowedMime || isAllowedExt) {
+        cb(null, true);
+      } else {
+        cb(new Error('Invalid file type. Only JPEG, PNG, and WebP images are allowed.'), false);
+      }
+    },
+  });
+  
+  const handleMulterError = (err, req, res, next) => {
+    if (err) {
+      return res.status(400).json({ success: false, message: err.message });
+    }
+    next();
+  };
   
   return {
     cloudinary: {
@@ -19,6 +41,7 @@ jest.mock('../../src/config/cloudinary', () => {
       },
     },
     upload: mockUpload,
+    handleMulterError,
   };
 });
 

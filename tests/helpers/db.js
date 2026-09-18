@@ -10,10 +10,11 @@ const connectTestDB = async () => {
     return;
   }
   
+  // MongoDB driver v6 requires driver metadata in a specific format
   await mongoose.connect(TEST_MONGODB_URI, {
     serverSelectionTimeoutMS: 10000,
     socketTimeoutMS: 20000,
-    appName: 'afrolatam-test',
+    driverInfo: { driver: { name: 'mongoose', version: mongoose.version } },
   });
   isConnected = true;
 };
