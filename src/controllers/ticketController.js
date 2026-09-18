@@ -1,58 +1,5 @@
-now between this one in my code 
-const Ticket = require('../models/Ticket');
-const Event = require('../models/Event');
-const { generateTicketCode } = require('../utils/generateCode');
 
-// POST /api/tickets
-const createTicket = async (req, res) => {
-  try {
-    const { eventId, ownerId, paymentTxHash } = req.body;
-
-    if (!eventId || !ownerId) {
-      return res.status(400).json({
-        message: 'eventId and ownerId are required',
-      });
-    }
-
-    const event = await Event.findById(eventId);
-
-    if (!event) {
-      return res.status(404).json({
-        message: 'Event not found',
-      });
-    }
-
-    const code = generateTicketCode();
-
-    const ticket = await Ticket.create({
-      code,
-      qrData: code,
-      event: eventId,
-      ownerId,
-      paymentTxHash: paymentTxHash || null,
-      isGift: false,
-    });
-
-    const populated = await ticket.populate('event');
-
-    res.status(201).json({
-      message: 'Ticket created successfully',
-      ticketId: ticket._id,
-      ownerId: ticket.ownerId,
-      ticket: populated,
-    });
-  } catch (error) {
-    console.error('Create Ticket Error:', error);
-
-    res.status(500).json({
-      message: error.message,
-    });
-  }
-};
-
-
-
-and this one in my repo which one accually works with the frontend to create ticket
+// and this one in my repo which one accually works with the frontend to create ticket
 
 
 const Ticket = require('../models/Ticket');
