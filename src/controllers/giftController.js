@@ -14,6 +14,17 @@ const createGift = async (req, res) => {
     const event = await Event.findById(eventId);
     if (!event) return res.status(404).json({ message: 'Event not found' });
 
+    // Prevent the same payment transaction from creating multiple gifts
+    if (paymentTxHash) {
+      const existingTicket = await Ticket.findOne({ paymentTxHash });
+
+      if (existingTicket) {
+        return res.status(409).json({
+          message: 'Duplicate paymentTxHash',
+        });
+      }
+    }
+
     const code = generateTicketCode();
     const claimCode = generateClaimCode();
 
@@ -33,9 +44,17 @@ const createGift = async (req, res) => {
       shareLink: `${process.env.SERVER_URL}/claim?code=${claimCode}`,
       ticket,
     });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+} catch (error) {
+    if (error.code === 11000 && error.keyPattern?.paymentTxHash) {
+      return res.status(409).json({
+        message: 'Duplicate paymentTxHash',
+      });
+    }
+
+    return res.status(500).json({
+      message: error.message,
+    });
+}
 };
 
 // POST /api/gifts/claim

@@ -7,18 +7,57 @@ const createTicket = async (req, res) => {
   try {
     const { eventId, ownerId, paymentTxHash } = req.body;
 
+    // Required field validation
     if (!eventId || !ownerId) {
-      return res.status(400).json({ message: 'eventId and ownerId are required' });
+      return res.status(400).json({
+        message: 'eventId and ownerId are required',
+      });
+    }
+
+    // Type validation
+    if (typeof eventId !== 'string') {
+      return res.status(400).json({
+        message: 'eventId must be a string',
+      });
+    }
+
+    if (typeof ownerId !== 'string') {
+      return res.status(400).json({
+        message: 'ownerId must be a string',
+      });
+    }
+
+    // Prevent invalid MongoDB ObjectId from becoming a 500 error
+    if (!/^[0-9a-fA-F]{24}$/.test(eventId)) {
+      return res.status(400).json({
+        message: 'Invalid eventId',
+      });
     }
 
     const event = await Event.findById(eventId);
-    if (!event) return res.status(404).json({ message: 'Event not found' });
+
+    if (!event) {
+      return res.status(404).json({
+        message: 'Event not found',
+      });
+    }
+
+    // Prevent the same payment transaction from creating multiple tickets
+    if (paymentTxHash) {
+      const existingTicket = await Ticket.findOne({ paymentTxHash });
+
+      if (existingTicket) {
+        return res.status(409).json({
+          message: 'Duplicate paymentTxHash',
+        });
+      }
+    }
 
     const code = generateTicketCode();
 
     const ticket = await Ticket.create({
       code,
-      qrData: code, // frontend can turn this into a QR
+      qrData: code,
       event: eventId,
       ownerId,
       paymentTxHash: paymentTxHash || null,
@@ -32,7 +71,22 @@ const createTicket = async (req, res) => {
       ticket: populated,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: Object.values(error.errors).map((err) => err.message),
+      });
+    }
+
+    if (error.code === 11000) {
+      return res.status(409).json({
+        message: 'Duplicate ticket data',
+      });
+    }
+
+    return res.status(500).json({
+      message: error.message,
+    });
   }
 };
 
@@ -42,7 +96,15 @@ const getMyTickets = async (req, res) => {
     const { ownerId } = req.query;
 
     if (!ownerId) {
-      return res.status(400).json({ message: 'ownerId is required' });
+      return res.status(400).json({
+        message: 'ownerId is required',
+      });
+    }
+
+    if (typeof ownerId !== 'string') {
+      return res.status(400).json({
+        message: 'ownerId must be a string',
+      });
     }
 
     const tickets = await Ticket.find({
@@ -53,7 +115,9 @@ const getMyTickets = async (req, res) => {
 
     res.json(tickets);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };
 
