@@ -13,6 +13,9 @@
     "test:integration": "cross-env NODE_ENV=test jest tests/integration",
     "seed:cloudinary": "node scripts/seedEventsCloudinary.js"
   },
+  "start": "node src/server.js",
+  "dev": "nodemon src/server.js"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
