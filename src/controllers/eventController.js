@@ -26,27 +26,48 @@ const createEvent = async (req, res) => {
   try {
     const { title, description, priceUSDC, location, date } = req.body;
 
-    if (!title || !priceUSDC) {
+    if (!title || priceUSDC === undefined || priceUSDC === null || priceUSDC === '') {
       return res.status(400).json({ message: 'title and priceUSDC are required' });
     }
 
+    const normalizedTitle = String(title).trim();
+    const normalizedLocation = location ? String(location).trim() : 'Virtual';
+
+    if (!normalizedTitle) {
+      return res.status(400).json({ message: 'title cannot be empty' });
+    }
+
+    const price = Number(priceUSDC);
+    if (!Number.isFinite(price) || price <= 0) {
+      return res.status(400).json({ message: 'priceUSDC must be a positive number' });
+    }
+
     let imageUrl = null;
+    let imagePublicId = null;
     if (req.file) {
       imageUrl = req.file.path || req.file.url || req.file.secure_url || null;
+      imagePublicId = req.file.filename || req.file.public_id || null;
     }
 
     const event = await Event.create({
-      title,
+      title: normalizedTitle,
       description,
-      priceUSDC: Number(priceUSDC),
-      location: location || 'Virtual',
+      priceUSDC: price,
+      location: normalizedLocation,
       date: date ? new Date(date) : null,
-      imageUrl, // ✅ use imageUrl, not image
+      imageUrl,
+      imagePublicId,
     });
 
     res.status(201).json(event);
   } catch (error) {
     console.error('Create Event Error:', error);
+    if (error.code === 11000 && error.keyPattern && error.keyPattern.title && error.keyPattern.location) {
+      return res.status(409).json({ message: 'An event with this title and location already exists' });
+    }
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: error.message });
+    }
     res.status(400).json({ message: error.message });
   }
 };
