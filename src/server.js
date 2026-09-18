@@ -10,8 +10,6 @@ const eventRoutes = require('./routes/events');
 const ticketRoutes = require('./routes/tickets');
 const giftRoutes = require('./routes/gifts');
 
-connectDB();
-
 const app = express();
 
 /*
@@ -75,6 +73,18 @@ app.use('/api/events', eventRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/gifts', giftRoutes);
 
+// Only connect to DB and start server if not in test environment
+if (process.env.NODE_ENV !== 'test') {
+  connectDB();
+
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`Server running on ${process.env.SERVER_URL}`);
+    console.log(`Swagger docs → ${process.env.SERVER_URL}/api-docs`);
+  });
+}
+
+module.exports = app;
 // Start server
 const PORT = process.env.PORT || 5000;
 

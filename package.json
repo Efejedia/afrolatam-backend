@@ -4,6 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "test": "cross-env NODE_ENV=test jest",
+    "test:watch": "cross-env NODE_ENV=test jest --watch",
+    "test:html": "cross-env NODE_ENV=test jest --reporters=default --reporters=jest-html-reporters",
+    "test:unit": "cross-env NODE_ENV=test jest tests/unit",
+    "test:integration": "cross-env NODE_ENV=test jest tests/integration",
+    "seed:cloudinary": "node scripts/seedEventsCloudinary.js"
+  },
   "start": "node src/server.js",
   "dev": "nodemon src/server.js"
 },
@@ -15,7 +24,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "mongoose": "^9.10.1",
+    "mongoose": "^8.8.0",
     "multer": "^2.4.0",
     "multer-storage-cloudinary": "^4.0.0",
     "nanoid": "^6.0.1",
@@ -23,6 +32,13 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "@babel/core": "^8.0.5",
+    "@babel/preset-env": "^8.0.5",
+    "babel-jest": "^30.5.1",
+    "cross-env": "^10.1.0",
+    "jest": "^30.5.1",
+    "jest-html-reporters": "^3.1.7",
+    "nodemon": "^3.1.14",
+    "supertest": "^7.2.2"
   }
 }

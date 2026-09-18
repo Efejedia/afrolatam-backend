@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getEvents, getEventById, createEvent } = require('../controllers/eventController');
-const { upload } = require('../config/cloudinary');
+const { upload, handleMulterError } = require('../config/cloudinary');
 
 /**
  * @swagger
@@ -50,6 +50,6 @@ router.get('/:id', getEventById);
  *                 type: string
  *                 format: binary
  */
-router.post('/', upload.single('image'), createEvent);
+router.post('/', upload.single('image'), handleMulterError, createEvent);
 
 module.exports = router;
