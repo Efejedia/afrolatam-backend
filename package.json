@@ -10,7 +10,8 @@
     "test:watch": "cross-env NODE_ENV=test jest --watch",
     "test:html": "cross-env NODE_ENV=test jest --reporters=default --reporters=jest-html-reporters",
     "test:unit": "cross-env NODE_ENV=test jest tests/unit",
-    "test:integration": "cross-env NODE_ENV=test jest tests/integration"
+    "test:integration": "cross-env NODE_ENV=test jest tests/integration",
+    "seed:cloudinary": "node scripts/seedEventsCloudinary.js"
   },
   "keywords": [],
   "author": "",
@@ -20,7 +21,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "mongoose": "^9.10.1",
+    "mongoose": "^8.8.0",
     "multer": "^2.4.0",
     "multer-storage-cloudinary": "^4.0.0",
     "nanoid": "^6.0.1",
