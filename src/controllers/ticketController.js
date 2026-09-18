@@ -1,24 +1,18 @@
-
-// and this one in my repo which one accually works with the frontend to create ticket
-
-
 const Ticket = require('../models/Ticket');
 const Event = require('../models/Event');
 const { generateTicketCode } = require('../utils/generateCode');
 
-// POST /api/tickets  → called after successful Pollar payment
+// POST /api/tickets
 const createTicket = async (req, res) => {
   try {
     const { eventId, ownerId, paymentTxHash } = req.body;
 
-    // Required field validation
     if (!eventId || !ownerId) {
       return res.status(400).json({
         message: 'eventId and ownerId are required',
       });
     }
 
-    // Type validation
     if (typeof eventId !== 'string') {
       return res.status(400).json({
         message: 'eventId must be a string',
@@ -31,7 +25,6 @@ const createTicket = async (req, res) => {
       });
     }
 
-    // Prevent invalid MongoDB ObjectId from becoming a 500 error
     if (!/^[0-9a-fA-F]{24}$/.test(eventId)) {
       return res.status(400).json({
         message: 'Invalid eventId',
@@ -46,9 +39,11 @@ const createTicket = async (req, res) => {
       });
     }
 
-    // Prevent the same payment transaction from creating multiple tickets
+    // Prevent duplicate payment transactions.
     if (paymentTxHash) {
-      const existingTicket = await Ticket.findOne({ paymentTxHash });
+      const existingTicket = await Ticket.findOne({
+        paymentTxHash,
+      });
 
       if (existingTicket) {
         return res.status(409).json({
@@ -70,15 +65,29 @@ const createTicket = async (req, res) => {
 
     const populated = await ticket.populate('event');
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'Ticket created successfully',
+      ticketId: ticket._id,
+      ownerId: ticket.ownerId,
       ticket: populated,
     });
   } catch (error) {
+    console.error('Create Ticket Error:', error);
+
     if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(
+        (err) => err.message
+      );
+
       return res.status(400).json({
         message: 'Validation failed',
-        errors: Object.values(error.errors).map((err) => err.message),
+        errors,
+      });
+    }
+
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        message: `Invalid ${error.path}`,
       });
     }
 
@@ -89,7 +98,7 @@ const createTicket = async (req, res) => {
     }
 
     return res.status(500).json({
-      message: error.message,
+      message: error.message || 'Internal server error',
     });
   }
 };
@@ -117,12 +126,17 @@ const getMyTickets = async (req, res) => {
       .populate('event')
       .sort({ createdAt: -1 });
 
-    res.json(tickets);
+    return res.json(tickets);
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
+    console.error('Get My Tickets Error:', error);
+
+    return res.status(500).json({
+      message: error.message || 'Internal server error',
     });
   }
 };
 
-module.exports = { createTicket, getMyTickets };
+module.exports = {
+  createTicket,
+  getMyTickets,
+};
