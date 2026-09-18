@@ -23,9 +23,7 @@ const ticketSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      lowercase: true,
       maxlength: 254,
-      match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
     },
 
     isGift: {
