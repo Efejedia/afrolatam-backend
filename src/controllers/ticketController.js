@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Ticket = require('../models/Ticket');
 const Event = require('../models/Event');
 const { generateTicketCode } = require('../utils/generateCode');
@@ -7,12 +8,14 @@ const createTicket = async (req, res) => {
   try {
     const { eventId, ownerId, paymentTxHash } = req.body;
 
+    // Required fields
     if (!eventId || !ownerId) {
       return res.status(400).json({
         message: 'eventId and ownerId are required',
       });
     }
 
+    // Type validation
     if (typeof eventId !== 'string') {
       return res.status(400).json({
         message: 'eventId must be a string',
@@ -25,12 +28,14 @@ const createTicket = async (req, res) => {
       });
     }
 
-    if (!/^[0-9a-fA-F]{24}$/.test(eventId)) {
+    // Validate MongoDB Event ID
+    if (!mongoose.Types.ObjectId.isValid(eventId)) {
       return res.status(400).json({
         message: 'Invalid eventId',
       });
     }
 
+    // Find event
     const event = await Event.findById(eventId);
 
     if (!event) {
@@ -39,7 +44,7 @@ const createTicket = async (req, res) => {
       });
     }
 
-    // Prevent duplicate payment transactions.
+    // Prevent duplicate payment transactions
     if (paymentTxHash) {
       const existingTicket = await Ticket.findOne({
         paymentTxHash,
@@ -52,8 +57,10 @@ const createTicket = async (req, res) => {
       }
     }
 
+    // Generate ticket code
     const code = generateTicketCode();
 
+    // Create ticket
     const ticket = await Ticket.create({
       code,
       qrData: code,
@@ -63,6 +70,7 @@ const createTicket = async (req, res) => {
       isGift: false,
     });
 
+    // Populate event information
     const populated = await ticket.populate('event');
 
     return res.status(201).json({
@@ -136,7 +144,49 @@ const getMyTickets = async (req, res) => {
   }
 };
 
+// GET /api/tickets/:id
+const getTicketById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    console.log('Get Ticket By ID:', id);
+
+    // Validate ticket ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: 'Invalid ticket ID',
+      });
+    }
+
+    // Find ticket and populate event
+    const ticket = await Ticket.findById(id).populate('event');
+
+    if (!ticket) {
+      return res.status(404).json({
+        message: 'Ticket not found',
+      });
+    }
+
+    return res.status(200).json({
+      ticket,
+    });
+  } catch (error) {
+    console.error('Get Ticket By ID Error:', error);
+
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        message: 'Invalid ticket ID',
+      });
+    }
+
+    return res.status(500).json({
+      message: error.message || 'Internal server error',
+    });
+  }
+};
+
 module.exports = {
   createTicket,
   getMyTickets,
+  getTicketById,
 };

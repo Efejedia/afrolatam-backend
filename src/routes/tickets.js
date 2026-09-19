@@ -1,6 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { createTicket, getMyTickets } = require('../controllers/ticketController');
+
+const {
+  createTicket,
+  getMyTickets,
+  getTicketById,
+} = require('../controllers/ticketController');
 
 /**
  * @swagger
@@ -18,7 +23,7 @@ const { createTicket, getMyTickets } = require('../controllers/ticketController'
  *       201:
  *         description: Ticket created successfully
  *       400:
- *         description: Missing required fields
+ *         description: Missing or invalid required fields
  *       404:
  *         description: Event not found
  */
@@ -48,5 +53,28 @@ router.post('/', createTicket);
  *                 $ref: '#/components/schemas/Ticket'
  */
 router.get('/me', getMyTickets);
+
+/**
+ * @swagger
+ * /api/tickets/{id}:
+ *   get:
+ *     summary: Get a ticket by ID
+ *     tags: [Tickets]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: MongoDB ticket ID
+ *     responses:
+ *       200:
+ *         description: Ticket found successfully
+ *       400:
+ *         description: Invalid ticket ID
+ *       404:
+ *         description: Ticket not found
+ */
+router.get('/:id', getTicketById);
 
 module.exports = router;
