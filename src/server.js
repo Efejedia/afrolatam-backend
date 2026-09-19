@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
+
 const swaggerSpec = require('./config/swagger');
 const connectDB = require('./config/db');
 
@@ -14,12 +15,6 @@ const app = express();
 
 /*
  * CORS
- *
- * Local Next.js frontend:
- * http://localhost:3000
- *
- * Production Next.js frontend:
- * Replace the URL below with your actual frontend domain.
  */
 const allowedOrigins = [
   'http://localhost:3000',
@@ -50,7 +45,9 @@ app.use(
 
 app.use(express.json());
 
-// Swagger UI
+/*
+ * Swagger
+ */
 app.use(
   '/api-docs',
   swaggerUi.serve,
@@ -60,39 +57,40 @@ app.use(
   })
 );
 
-// Health check
+/*
+ * Health check
+ */
 app.get('/', (req, res) => {
   res.json({
     message: 'AfroLatam Connect API is running',
-    docs: `${process.env.SERVER_URL}/api-docs`,
+    docs: `${
+      process.env.SERVER_URL || `http://localhost:${process.env.PORT || 5000}`
+    }/api-docs`,
   });
 });
 
-// API routes
+/*
+ * API routes
+ */
 app.use('/api/events', eventRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/gifts', giftRoutes);
 
-// Only connect to DB and start server if not in test environment
+/*
+ * Start server
+ */
 if (process.env.NODE_ENV !== 'test') {
+  const PORT = process.env.PORT || 5000;
+
   connectDB();
 
-  const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
-    console.log(`Server running on ${process.env.SERVER_URL}`);
-    console.log(`Swagger docs → ${process.env.SERVER_URL}/api-docs`);
+    const serverUrl =
+      process.env.SERVER_URL || `http://localhost:${PORT}`;
+
+    console.log(`Server running on ${serverUrl}`);
+    console.log(`Swagger docs → ${serverUrl}/api-docs`);
   });
 }
 
 module.exports = app;
-// Start server
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-  console.log(`Server running on ${process.env.SERVER_URL || `http://localhost:${PORT}`}`);
-  console.log(
-    `Swagger docs → ${
-      process.env.SERVER_URL || `http://localhost:${PORT}`
-    }/api-docs`
-  );
-});
